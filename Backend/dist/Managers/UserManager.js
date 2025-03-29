@@ -13,6 +13,7 @@ class UserManager {
             name, socket
         });
         this.queue.push(socket.id);
+        socket.send("lobby");
         this.clearQueue();
         this.initHandlers(socket);
     }
@@ -21,15 +22,19 @@ class UserManager {
         this.queue.filter(x => x !== socketId);
     }
     clearQueue() {
-        if (this.queue.length < 2)
+        if (this.queue.length < 2) {
+            // console.log("Not sufficent user is present");
             return;
+        }
+        ;
         //got the two user now we can talk to each other by sharing sdp
-        const user1 = this.users.find(x => x.socket.id === this.queue.pop());
-        const user2 = this.users.find(x => x.socket.id === this.queue.pop());
+        const socket1 = this.queue.pop();
+        const user1 = this.users.find(x => x.socket.id === socket1);
+        const socket2 = this.queue.pop();
+        const user2 = this.users.find(x => x.socket.id === socket2);
         if (!user1 || !user2)
             return;
         const roomId = this.roomManager.createRoom(user1, user2);
-        return roomId;
     }
     initHandlers(socket) {
         socket.on("offer", ({ sdp, roomId }) => {
