@@ -22,20 +22,45 @@ export class RoomManager {
         user1?.socket.emit("send-offer",{
             roomId
         })
+
+        user2?.socket.emit("send-offer",{
+            roomId
+        })
     }
 
-    onOffer(roomId:string,sdp:string){
-        const user2 = this.Rooms.get(roomId)?.user2;
-        //tell the other party that offer has received how send the ansewer
-        user2?.socket.emit("offer",{
+    onOffer(roomId:string,sdp:string, socketId: string){
+        console.log("control reached on offer block")
+        const rooms = this.Rooms.get(roomId);
+
+        const receivingUser = rooms?.user1.socket.id === socketId ? rooms.user2 : rooms?.user1
+
+        receivingUser?.socket.emit("offer",{
+            roomId,
             sdp
         })
     }
 
-    onAnswer(roomId:string,sdp:string){
-        const user1 = this.Rooms.get(String(roomId))?.user1;
-        user1?.socket.emit("answer",{
+    onAnswer(roomId:string,sdp:string,socketId:string){
+        const rooms = this.Rooms.get(roomId);
+
+        const receivingUser = rooms?.user1.socket.id === socketId ? rooms.user2 : rooms?.user1
+
+        receivingUser?.socket.emit("answer",{
+            roomId,
             sdp
+        })
+    }
+
+    onIceCandidate(roomId:string,senderId:string,type:string,candidate:string){
+        const room = this.Rooms.get(roomId);
+        if(!roomId) return;
+
+        const receivingUser =room?.user1.socket.id === senderId ? room.user2 : room?.user1
+        
+        receivingUser?.socket.emit("add-ice-candidates",{
+            candidate,
+            type,
+            roomId
         })
     }
 
