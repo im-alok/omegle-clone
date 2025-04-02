@@ -19,17 +19,18 @@ export class RoomManager {
             user1, user2
         })
 
+        console.log("1. user is asked to send the offer")
+
         user1?.socket.emit("send-offer",{
             roomId
         })
 
-        user2?.socket.emit("send-offer",{
-            roomId
-        })
+        
     }
 
     onOffer(roomId:string,sdp:string, socketId: string){
-        console.log("control reached on offer block")
+
+        console.log("2. offer received now asked to send the answer")
         const rooms = this.Rooms.get(roomId);
 
         const receivingUser = rooms?.user1.socket.id === socketId ? rooms.user2 : rooms?.user1
@@ -41,6 +42,7 @@ export class RoomManager {
     }
 
     onAnswer(roomId:string,sdp:string,socketId:string){
+        console.log("answer is received")
         const rooms = this.Rooms.get(roomId);
 
         const receivingUser = rooms?.user1.socket.id === socketId ? rooms.user2 : rooms?.user1
@@ -57,7 +59,7 @@ export class RoomManager {
 
         const receivingUser =room?.user1.socket.id === senderId ? room.user2 : room?.user1
         
-        receivingUser?.socket.emit("add-ice-candidates",{
+        receivingUser?.socket.emit("add-ice-candidate",{
             candidate,
             type,
             roomId

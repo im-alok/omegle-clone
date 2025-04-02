@@ -38,12 +38,16 @@ class UserManager {
     }
     initHandlers(socket) {
         socket.on("offer", ({ sdp, roomId }) => {
+            console.log("offer received, now asked to send the offer");
             this.roomManager.onOffer(roomId, sdp, socket.id);
         });
         socket.on("answer", ({ sdp, roomId }) => {
+            console.log("answer received");
+            // console.log(sdp)
             this.roomManager.onAnswer(roomId, sdp, socket.id);
         });
-        socket.on("add-ice-candidates", ({ roomId, candidate, type }) => {
+        socket.on("add-ice-candidate", ({ roomId, candidate, type }) => {
+            console.log(candidate);
             this.roomManager.onIceCandidate(roomId, socket.id, type, candidate);
         });
     }
