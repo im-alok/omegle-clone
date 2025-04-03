@@ -1,3 +1,4 @@
+import { handleICECandidateEvent, handleLocalVideoStream, handleTrackEvent } from '@/lib/webRTC'
 import React, { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Socket, io } from "socket.io-client"
@@ -38,54 +39,25 @@ const Room = ({
             setLobby(true);
         })
         ws.on("send-offer", ({ roomId }) => {
-            console.log("offerer: user is asked to send the message", ws.id);
             const pc = new RTCPeerConnection({
                 iceServers: [
                     { urls: "stun:stun.l.google.com:19302" },
-                    // Add TURN server if needed for NAT traversal
                 ]
             });
             offererPc.current = pc;
-            console.log(offererPc);
 
-            pc.ontrack = (event) => {
-                if (!remoteStream.current.getTracks().some(t => t.id === event.track.id)) {
-                    remoteStream.current.addTrack(event.track);
-                }
-                if (remoteVideoRef.current) {
-                    remoteVideoRef.current.srcObject = remoteStream.current;
-                    remoteVideoRef.current.play().catch(e => console.error("Play failed:", e));
-                }
-            };
+            //event handler to receive the remote media
+            pc.ontrack = (event) =>handleTrackEvent(remoteStream,remoteVideoRef,event);
 
+            //adding the local audio and video streams
+            if (localAudioStream && localVideoStream)
+                handleLocalVideoStream(pc,localAudioStream,localVideoStream);
 
-            if (localAudioStream) {
-                console.log("2. offerer: local stream is added")
-                pc.addTrack(localAudioStream)
-            }
-            if (localVideoStream) {
-                pc.addTrack(localVideoStream)
-            }
+            //if crendentials and ip came send it to other side
+            pc.onicecandidate = (e) => handleICECandidateEvent(e,ws,"offerer",roomId)
 
-
-
-            pc.onicecandidate = (e) => {
-                console.log("offerer: getting ice candidate and sending up to the server/other side", ws.id)
-                console.log(e.candidate)
-                if (e.candidate) {
-                    ws.emit("add-ice-candidate", {
-                        candidate: e.candidate,
-                        roomId,
-                        type: "offerer"
-                    })
-                }
-            }
-
-
-
-
+            //sending offer to start the connection
             pc.onnegotiationneeded = async () => {
-                console.log("offerer: offer is being sent");
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
                 ws.emit("offer", {
@@ -99,31 +71,17 @@ const Room = ({
             const pc = new RTCPeerConnection({
                 iceServers: [
                     { urls: "stun:stun.l.google.com:19302" },
-                    // Add TURN server if needed for NAT traversal
                 ]
             });
             answererPc.current = pc;
-            if (localAudioStream) {
-                pc.addTrack(localAudioStream)
-            }
-            if (localVideoStream) {
-                pc.addTrack(localVideoStream);
-            }
 
+            if (localAudioStream && localVideoStream) 
+                handleLocalVideoStream(pc,localAudioStream,localVideoStream)
+
+            // setting up the remote sdp comming in offer
             pc.setRemoteDescription(new RTCSessionDescription(sdp));
 
-
-            pc.ontrack = (event) => {
-                if (!remoteStream.current.getTracks().some(t => t.id === event.track.id)) {
-                    remoteStream.current.addTrack(event.track);
-                }
-                if (remoteVideoRef.current) {
-                    remoteVideoRef.current.srcObject = remoteStream.current;
-                    remoteVideoRef.current.play().catch(e => console.error("Play failed:", e));
-                }
-            };
-
-
+            pc.ontrack = (event) =>handleTrackEvent(remoteStream,remoteVideoRef,event);
 
             const answer = await pc.createAnswer()
             await pc.setLocalDescription(answer);
@@ -131,37 +89,22 @@ const Room = ({
                 sdp: answer,
                 roomId: roomId
             })
-            pc.onicecandidate = (e) => {
-                console.log("answerer: ice candidate is received")
-                if (e.candidate) {
-                    ws.emit("add-ice-candidate", {
-                        candidate: e.candidate,
-                        roomId,
-                        type: "answerer"
-                    })
-                }
-            }
-            console.log("answerer: answer is being sent");
+
+            pc.onicecandidate = (e) => handleICECandidateEvent(e,ws,"answerer",roomId)
 
             setLobby(false);
 
         })
         ws.on("answer", async ({ sdp }) => {
-            console.log(sdp);
             setLobby(false)
-            if (!offererPc.current) {
-                console.log("return from here only ")
-                return;
-            }
-
+            if (!offererPc.current) return;
             await offererPc.current.setRemoteDescription(new RTCSessionDescription(sdp));
 
         })
 
 
-
+        // if ice candidate is received sending it to correct pos
         ws.on("add-ice-candidate", ({ type, candidate }) => {
-            console.log("ice cndiate is received");
             if (type === "offerer") {
                 answererPc.current?.addIceCandidate(candidate);
             } else {
@@ -176,10 +119,8 @@ const Room = ({
 
     useEffect(() => {
         if (localVideoRef.current && localVideoStream) {
-
             const stream = new MediaStream();
             stream.addTrack(localVideoStream);
-
             localVideoRef.current.srcObject = stream;
             localVideoRef.current.play()
         }
