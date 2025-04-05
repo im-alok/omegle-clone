@@ -28,6 +28,7 @@ const Room = ({
     const localVideoRef = useRef<HTMLVideoElement | null>(null);
     const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
     const remoteStream = useRef(new MediaStream());
+    const id = useRef<string>(""); //room ID
 
     useEffect(() => {
         //logic to get the user
@@ -35,12 +36,19 @@ const Room = ({
         const ws = io(URL, {
             autoConnect: true,
         });
+
         setSocket(ws);
+        ws.emitWithAck("initiate-call",{
+            userName
+        },()=>{
+            console.log("Thing started");
+        })
 
         const setupOfferer = ({ roomId }: { roomId: string }) => {
             const pc = new RTCPeerConnection({
                 iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
             });
+            id.current = roomId;
             offererPc.current = pc;
 
             pc.ontrack = (event) => handleTrackEvent(remoteStream, remoteVideoRef, event);
@@ -65,6 +73,7 @@ const Room = ({
             const pc = new RTCPeerConnection({
                 iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
             });
+            id.current = roomId;
             answererPc.current = pc;
 
             if (localAudioStream && localVideoStream) {
@@ -96,6 +105,7 @@ const Room = ({
             if (!offererPc.current) return;
             await offererPc.current.setRemoteDescription(new RTCSessionDescription(sdp));
         });
+        
 
         ws.on("add-ice-candidate", ({ type, candidate }) => {
             const rtcCandidate = new RTCIceCandidate(candidate);
@@ -105,6 +115,16 @@ const Room = ({
                 offererPc.current?.addIceCandidate(rtcCandidate);
             }
         });
+
+        ws?.on("room-ends",()=>{
+            remoteStream.current?.getTracks().forEach(track => {
+                remoteStream.current.removeTrack(track);
+                track.stop()
+            });
+            offererPc.current?.close();
+            answererPc.current?.close();
+            setLobby(true);
+        })
 
         return () => {
             ws.disconnect();
@@ -147,6 +167,11 @@ const Room = ({
     }, [localVideoStream]);
 
 
+    function handleSkip(){
+        socket?.emit("skip",{
+            roomId: id.current
+        })
+    }
 
 
     return (
@@ -157,8 +182,6 @@ const Room = ({
                 {/* localVideo */}
                 <div className='flex flex-col gap-5'>
                     <video autoPlay muted width={400} ref={localVideoRef} className='rounded-2xl border-2 shadow-2xs shadow-white' />
-
-                    {lobby ? (<Loading />) : null}
 
                     {/* incoming video */}
                     <video autoPlay muted={false} width={400} height={400} ref={remoteVideoRef} className='rounded-2xl' />
@@ -171,6 +194,7 @@ const Room = ({
                 }
             </div>
 
+            {lobby ? (<Loading />) : null}
             {/* //chat apge */}
 
             <div className='w-full h-full'>
@@ -185,8 +209,19 @@ export default Room
 
 
 //todo:
-// ** cleanup logic
-// 1. write the logic to hndle user after they leave the room or click the next button
+// ** cleanup logic //done
+// 1. write the logic to hndle user after they leave the room or click the next button //done
+
+// left: implemet the on skip button
+// when user click skip 
+// make the loading useEffect
+// close the webRTC connections
+// take care of the socket bits
+
+
 // 2. add the chat features
 // 3. deploy the code
 // 4. dome
+
+
+//when one user leave disconnect the webRtc connection from the user active there also

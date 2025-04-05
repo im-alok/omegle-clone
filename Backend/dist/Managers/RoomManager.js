@@ -6,18 +6,26 @@ class RoomManager {
     constructor() {
         this.Rooms = new Map();
     }
+    roomDetails(roomId) {
+        console.log(roomId);
+        const users = this.Rooms.get(roomId);
+        return users;
+    }
     createRoom(user1, user2) {
         const roomId = this.generate().toString();
         this.Rooms.set(roomId.toString(), {
             user1, user2
         });
-        console.log("1. user is asked to send the offer");
+        user1.socket.data.roomId = roomId;
+        user2.socket.data.roomId = roomId;
         user1 === null || user1 === void 0 ? void 0 : user1.socket.emit("send-offer", {
             roomId
         });
     }
+    deleteRoom(roomId) {
+        this.Rooms.delete(roomId);
+    }
     onOffer(roomId, sdp, socketId) {
-        console.log("2. offer received now asked to send the answer");
         const rooms = this.Rooms.get(roomId);
         const receivingUser = (rooms === null || rooms === void 0 ? void 0 : rooms.user1.socket.id) === socketId ? rooms.user2 : rooms === null || rooms === void 0 ? void 0 : rooms.user1;
         receivingUser === null || receivingUser === void 0 ? void 0 : receivingUser.socket.emit("offer", {
@@ -26,7 +34,6 @@ class RoomManager {
         });
     }
     onAnswer(roomId, sdp, socketId) {
-        console.log("answer is received");
         const rooms = this.Rooms.get(roomId);
         const receivingUser = (rooms === null || rooms === void 0 ? void 0 : rooms.user1.socket.id) === socketId ? rooms.user2 : rooms === null || rooms === void 0 ? void 0 : rooms.user1;
         receivingUser === null || receivingUser === void 0 ? void 0 : receivingUser.socket.emit("answer", {
@@ -43,6 +50,17 @@ class RoomManager {
             candidate,
             type,
             roomId
+        });
+    }
+    onConversation(roomId, message, socketId) {
+        //get the room id
+        const members = this.Rooms.get(roomId);
+        const user1 = members === null || members === void 0 ? void 0 : members.user1;
+        const receivingUser = (user1 === null || user1 === void 0 ? void 0 : user1.socket.id) === socketId ? members === null || members === void 0 ? void 0 : members.user2 : members === null || members === void 0 ? void 0 : members.user2;
+        receivingUser === null || receivingUser === void 0 ? void 0 : receivingUser.socket.emit("conversation", {
+            roomId,
+            message,
+            socketId
         });
     }
     generate() {

@@ -37,5 +37,18 @@ server.listen(PORT, () => {
 const userManager = new UserManager();
 
 io.on('connection', (socket: Socket) => {
-    userManager.addUser("random",socket);
+    socket.on("initiate-call",({userName})=>{
+        userManager.addUser(userName,socket);
+    })
+
+    socket.on("disconnect",()=>{
+        console.log("control reache here");
+        console.log(socket.data);
+        userManager.removeUser(socket.id,socket.data.roomId);
+    })
+
+
+    socket.on("skip",({roomId})=>{
+        userManager.closeRoom(roomId);
+    })
 })

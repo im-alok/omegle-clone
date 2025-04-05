@@ -13,60 +13,83 @@ export class RoomManager {
         this.Rooms = new Map<string, Room>();
     }
 
+    roomDetails(roomId: string): Room | undefined {
+        console.log(roomId)
+        const users = this.Rooms.get(roomId);
+
+        return users;
+    }
+
     createRoom(user1: User, user2: User) {
         const roomId = this.generate().toString();
         this.Rooms.set(roomId.toString(), {
             user1, user2
         })
 
-        console.log("1. user is asked to send the offer")
-
-        user1?.socket.emit("send-offer",{
+        user1.socket.data.roomId = roomId;
+        user2.socket.data.roomId = roomId;
+        user1?.socket.emit("send-offer", {
             roomId
         })
 
-        
+
     }
 
-    onOffer(roomId:string,sdp:string, socketId: string){
+    deleteRoom(roomId: string) {
+        this.Rooms.delete(roomId);
+    }
 
-        console.log("2. offer received now asked to send the answer")
+    onOffer(roomId: string, sdp: string, socketId: string) {
+
         const rooms = this.Rooms.get(roomId);
 
         const receivingUser = rooms?.user1.socket.id === socketId ? rooms.user2 : rooms?.user1
 
-        receivingUser?.socket.emit("offer",{
+        receivingUser?.socket.emit("offer", {
             roomId,
             sdp
         })
     }
 
-    onAnswer(roomId:string,sdp:string,socketId:string){
-        console.log("answer is received")
+    onAnswer(roomId: string, sdp: string, socketId: string) {
         const rooms = this.Rooms.get(roomId);
 
         const receivingUser = rooms?.user1.socket.id === socketId ? rooms.user2 : rooms?.user1
 
-        receivingUser?.socket.emit("answer",{
+        receivingUser?.socket.emit("answer", {
             roomId,
             sdp
         })
     }
 
-    onIceCandidate(roomId:string,senderId:string,type:string,candidate:string){
+    onIceCandidate(roomId: string, senderId: string, type: string, candidate: string) {
         const room = this.Rooms.get(roomId);
-        if(!roomId) return;
+        if (!roomId) return;
 
-        const receivingUser =room?.user1.socket.id === senderId ? room.user2 : room?.user1
-        
-        receivingUser?.socket.emit("add-ice-candidate",{
+        const receivingUser = room?.user1.socket.id === senderId ? room.user2 : room?.user1
+
+        receivingUser?.socket.emit("add-ice-candidate", {
             candidate,
             type,
             roomId
         })
     }
 
+    onConversation(roomId: string, message: string, socketId: string) {
+        //get the room id
+        const members = this.Rooms.get(roomId);
+        const user1 = members?.user1;
+        const receivingUser = user1?.socket.id === socketId ? members?.user2 : members?.user2
+
+        receivingUser?.socket.emit("conversation",{
+            roomId,
+            message,
+            socketId
+        })
+    }
+
     generate() {
         return GLOBAL_ROOM_ID++;
     }
+
 }

@@ -1,5 +1,5 @@
 import { Socket } from "socket.io"
-import { RoomManager } from "./RoomManager"
+import { Room, RoomManager } from "./RoomManager"
 
 export interface User {
     name: string,
@@ -27,9 +27,12 @@ export class UserManager {
         this.initHandlers(socket);
     }
 
-    removeUser(socketId: string) {
+    removeUser(socketId: string, roomId: string) {
+        console.log("from remove user", roomId);
         this.users = this.users.filter((x) => x.socket.id !== socketId);
         this.queue.filter(x => x !== socketId);
+        if (roomId)
+            this.closeRoom(roomId);
     }
 
     clearQueue() {
@@ -48,23 +51,51 @@ export class UserManager {
             return
 
         const roomId = this.roomManager.createRoom(user1, user2);
+        this.clearQueue();
     }
 
     initHandlers(socket: Socket) {
         socket.on("offer", ({ sdp, roomId }: { sdp: string, roomId: string }) => {
-            console.log("offer received, now asked to send the offer")
             this.roomManager.onOffer(roomId, sdp, socket.id)
         })
 
         socket.on("answer", ({ sdp, roomId }: { sdp: string, roomId: string }) => {
-            console.log("answer received");
-            // console.log(sdp)
             this.roomManager.onAnswer(roomId, sdp, socket.id)
         })
 
-        socket.on("add-ice-candidate",({roomId,candidate,type})=>{
-            console.log(candidate)
-            this.roomManager.onIceCandidate(roomId,socket.id,type,candidate)
+        socket.on("add-ice-candidate", ({ roomId, candidate, type }) => {
+            this.roomManager.onIceCandidate(roomId, socket.id, type, candidate)
         })
+
+        socket.on("conversation",({roomId,message,socketId})=>{
+            this.roomManager.onConversation(roomId,message,socketId);
+        });
+    }
+
+    //close the room if anyone of the user left the room and send back to the queue
+
+    closeRoom(roomId: string) {
+        console.log("from close room hanler");
+        const user: Room | undefined = this.roomManager.roomDetails(roomId);
+
+        const user1 = user?.user1;
+        const user2 = user?.user2;
+
+        //remove the room and send the user back to the queue
+        this.roomManager.deleteRoom(roomId);
+
+
+
+        //push the user back to the queue
+        if (user1?.socket.connected) {
+            console.log("inside user1 socket")
+            user1?.socket.emit("room-ends");
+            this.queue.unshift(user1.socket.id);
+        }
+        if (user2?.socket.connected) {
+            console.log("inside user 2 socket");
+            user2?.socket.emit("room-ends");
+            this.queue.push(user2.socket.id);
+        }
     }
 }
