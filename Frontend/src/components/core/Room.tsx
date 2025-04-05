@@ -37,86 +37,102 @@ const Room = ({
         });
         setSocket(ws);
 
-        ws.on("lobby", () => {
-            setLobby(true);
-        })
-        ws.on("send-offer", ({ roomId }) => {
+        const setupOfferer = ({ roomId }: { roomId: string }) => {
             const pc = new RTCPeerConnection({
-                iceServers: [
-                    { urls: "stun:stun.l.google.com:19302" },
-                ]
+                iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
             });
             offererPc.current = pc;
 
-            //event handler to receive the remote media
             pc.ontrack = (event) => handleTrackEvent(remoteStream, remoteVideoRef, event);
 
-            //adding the local audio and video streams
-            if (localAudioStream && localVideoStream)
+            if (localAudioStream && localVideoStream) {
                 handleLocalVideoStream(pc, localAudioStream, localVideoStream);
+            }
 
-            //if crendentials and ip came send it to other side
-            pc.onicecandidate = (e) => handleICECandidateEvent(e, ws, "offerer", roomId)
+            pc.onicecandidate = (e) => handleICECandidateEvent(e, ws, "offerer", roomId);
 
-            //sending offer to start the connection
             pc.onnegotiationneeded = async () => {
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
                 ws.emit("offer", {
                     sdp: offer,
                     roomId
-                })
-            }
-        })
+                });
+            };
+        };
 
-        ws.on("offer", async ({ roomId, sdp }) => {
+        const setupAnswerer = async ({ roomId, sdp }: { roomId: string, sdp: RTCSessionDescriptionInit }) => {
             const pc = new RTCPeerConnection({
-                iceServers: [
-                    { urls: "stun:stun.l.google.com:19302" },
-                ]
+                iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
             });
             answererPc.current = pc;
 
-            if (localAudioStream && localVideoStream)
-                handleLocalVideoStream(pc, localAudioStream, localVideoStream)
+            if (localAudioStream && localVideoStream) {
+                handleLocalVideoStream(pc, localAudioStream, localVideoStream);
+            }
 
-            // setting up the remote sdp comming in offer
             pc.setRemoteDescription(new RTCSessionDescription(sdp));
 
             pc.ontrack = (event) => handleTrackEvent(remoteStream, remoteVideoRef, event);
 
-            const answer = await pc.createAnswer()
+            const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             ws.emit("answer", {
                 sdp: answer,
-                roomId: roomId
-            })
+                roomId
+            });
 
-            pc.onicecandidate = (e) => handleICECandidateEvent(e, ws, "answerer", roomId)
+            pc.onicecandidate = (e) => handleICECandidateEvent(e, ws, "answerer", roomId);
 
             setLobby(false);
+        };
 
-        })
+        
+        ws.on("lobby", () => setLobby(true));
+        ws.on("send-offer", setupOfferer);
+        ws.on("offer", setupAnswerer);
         ws.on("answer", async ({ sdp }) => {
-            setLobby(false)
+            setLobby(false);
             if (!offererPc.current) return;
             await offererPc.current.setRemoteDescription(new RTCSessionDescription(sdp));
+        });
 
-        })
-
-
-        // if ice candidate is received sending it to correct pos
         ws.on("add-ice-candidate", ({ type, candidate }) => {
+            const rtcCandidate = new RTCIceCandidate(candidate);
             if (type === "offerer") {
-                answererPc.current?.addIceCandidate(candidate);
+                answererPc.current?.addIceCandidate(rtcCandidate);
             } else {
-                console.log(offererPc);
-                offererPc.current?.addIceCandidate(candidate);
-
+                offererPc.current?.addIceCandidate(rtcCandidate);
             }
-        })
+        });
 
-    }, [name]);
+        return () => {
+            ws.disconnect();
+            ws.removeAllListeners();
+
+            offererPc.current?.getSenders().forEach(sender => sender.track?.stop());
+            answererPc.current?.getSenders().forEach(sender => sender.track?.stop());
+
+            offererPc.current?.close();
+            answererPc.current?.close();
+
+            offererPc.current = null;
+            answererPc.current = null;
+
+            remoteStream.current?.getTracks().forEach(track => track.stop());
+
+            if (localVideoRef.current) {
+                localVideoRef.current.srcObject = null;
+            }
+
+            if (remoteVideoRef.current) {
+                remoteVideoRef.current.srcObject = null;
+            }
+
+            setSocket(null);
+        };
+
+    }, [userName]);
 
 
     useEffect(() => {
@@ -127,11 +143,7 @@ const Room = ({
             localVideoRef.current.play()
         }
 
-        return () => {
-            offererPc.current!.close();
-            console.log(answererPc)
-            answererPc.current!.close();
-        }
+
     }, [localVideoStream]);
 
 
@@ -154,7 +166,7 @@ const Room = ({
 
                 {
                     !lobby && (
-                        <Button variant={"outline"} className='bg-green-500 text-black outline-none cursor-pointer' size={"lg"}>skip < MoveRight/></Button>
+                        <Button variant={"outline"} className='bg-green-500 text-black outline-none cursor-pointer' size={"lg"}>skip < MoveRight /></Button>
                     )
                 }
             </div>
