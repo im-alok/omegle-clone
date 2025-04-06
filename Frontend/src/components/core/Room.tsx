@@ -10,6 +10,11 @@ import { MoveRight } from 'lucide-react'
 
 const URL = "http://localhost:3000/"
 
+export interface MessageType {
+    sender: string,
+    message: string
+}
+
 const Room = ({
     userName,
     localVideoStream,
@@ -23,6 +28,7 @@ const Room = ({
 
     const [socket, setSocket] = useState<null | Socket>(null);
     const [lobby, setLobby] = useState<Boolean>(true);
+    const [message, setMessage] = useState<MessageType[]>([]);
     const offererPc = useRef<RTCPeerConnection | null>(null);
     const answererPc = useRef<null | RTCPeerConnection>(null);
     const localVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -38,9 +44,9 @@ const Room = ({
         });
 
         setSocket(ws);
-        ws.emitWithAck("initiate-call",{
+        ws.emitWithAck("initiate-call", {
             userName
-        },()=>{
+        }, () => {
             console.log("Thing started");
         })
 
@@ -96,7 +102,7 @@ const Room = ({
             setLobby(false);
         };
 
-        
+
         ws.on("lobby", () => setLobby(true));
         ws.on("send-offer", setupOfferer);
         ws.on("offer", setupAnswerer);
@@ -105,7 +111,8 @@ const Room = ({
             if (!offererPc.current) return;
             await offererPc.current.setRemoteDescription(new RTCSessionDescription(sdp));
         });
-        
+
+
 
         ws.on("add-ice-candidate", ({ type, candidate }) => {
             const rtcCandidate = new RTCIceCandidate(candidate);
@@ -115,16 +122,27 @@ const Room = ({
                 offererPc.current?.addIceCandidate(rtcCandidate);
             }
         });
-
-        ws?.on("room-ends",()=>{
+        ws?.on("room-ends", () => {
             remoteStream.current?.getTracks().forEach(track => {
                 remoteStream.current.removeTrack(track);
                 track.stop()
             });
             offererPc.current?.close();
             answererPc.current?.close();
+            setMessage([]);
             setLobby(true);
         })
+
+        ws?.on("conversation", ({ message, sender }: { message: string, sender: string }) => {
+            console.log("received the message")
+            const newMessage: MessageType = {
+                message: message,
+                sender: sender
+            }
+            setMessage(prev => [...prev, newMessage]);
+        })
+
+
 
         return () => {
             ws.disconnect();
@@ -167,8 +185,8 @@ const Room = ({
     }, [localVideoStream]);
 
 
-    function handleSkip(){
-        socket?.emit("skip",{
+    function handleSkip() {
+        socket?.emit("skip", {
             roomId: id.current
         })
     }
@@ -183,9 +201,12 @@ const Room = ({
                 <div className='flex flex-col gap-5'>
                     <video autoPlay muted width={400} ref={localVideoRef} className='rounded-2xl border-2 shadow-2xs shadow-white' />
 
+                    {lobby ? (<Loading />) : null}
+
                     {/* incoming video */}
                     <video autoPlay muted={false} width={400} height={400} ref={remoteVideoRef} className='rounded-2xl' />
                 </div>
+
 
                 {
                     !lobby && (
@@ -194,11 +215,11 @@ const Room = ({
                 }
             </div>
 
-            {lobby ? (<Loading />) : null}
+
             {/* //chat apge */}
 
             <div className='w-full h-full'>
-                <ConversationPage />
+                <ConversationPage roomId={id.current} message={message} setMessage={setMessage} socket={socket} />
             </div>
         </div>
     )

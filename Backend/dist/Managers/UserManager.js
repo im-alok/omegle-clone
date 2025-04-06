@@ -50,8 +50,8 @@ class UserManager {
         socket.on("add-ice-candidate", ({ roomId, candidate, type }) => {
             this.roomManager.onIceCandidate(roomId, socket.id, type, candidate);
         });
-        socket.on("conversation", ({ roomId, message, socketId }) => {
-            this.roomManager.onConversation(roomId, message, socketId);
+        socket.on("conversation", ({ roomId, message, sender }) => {
+            this.roomManager.onConversation(roomId, message, sender);
         });
     }
     //close the room if anyone of the user left the room and send back to the queue

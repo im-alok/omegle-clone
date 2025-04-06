@@ -52,15 +52,19 @@ class RoomManager {
             roomId
         });
     }
-    onConversation(roomId, message, socketId) {
+    onConversation(roomId, message, sender) {
         //get the room id
+        console.log("from omConv handler", sender);
         const members = this.Rooms.get(roomId);
         const user1 = members === null || members === void 0 ? void 0 : members.user1;
-        const receivingUser = (user1 === null || user1 === void 0 ? void 0 : user1.socket.id) === socketId ? members === null || members === void 0 ? void 0 : members.user2 : members === null || members === void 0 ? void 0 : members.user2;
-        receivingUser === null || receivingUser === void 0 ? void 0 : receivingUser.socket.emit("conversation", {
-            roomId,
+        const user2 = members === null || members === void 0 ? void 0 : members.user2;
+        user1 === null || user1 === void 0 ? void 0 : user1.socket.emit("conversation", {
             message,
-            socketId
+            sender
+        });
+        user2 === null || user2 === void 0 ? void 0 : user2.socket.emit("conversation", {
+            message,
+            sender
         });
     }
     generate() {

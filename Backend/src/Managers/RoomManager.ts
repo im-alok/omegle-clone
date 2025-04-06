@@ -75,16 +75,21 @@ export class RoomManager {
         })
     }
 
-    onConversation(roomId: string, message: string, socketId: string) {
+    onConversation(roomId: string, message: string, sender: string) {
         //get the room id
+        console.log("from omConv handler",sender);
         const members = this.Rooms.get(roomId);
         const user1 = members?.user1;
-        const receivingUser = user1?.socket.id === socketId ? members?.user2 : members?.user2
+        const user2 = members?.user2;
+        
 
-        receivingUser?.socket.emit("conversation",{
-            roomId,
+        user1?.socket.emit("conversation",{
             message,
-            socketId
+            sender
+        })
+        user2?.socket.emit("conversation",{
+            message,
+            sender
         })
     }
 

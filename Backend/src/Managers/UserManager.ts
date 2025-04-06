@@ -67,8 +67,8 @@ export class UserManager {
             this.roomManager.onIceCandidate(roomId, socket.id, type, candidate)
         })
 
-        socket.on("conversation",({roomId,message,socketId})=>{
-            this.roomManager.onConversation(roomId,message,socketId);
+        socket.on("conversation",({roomId,message,sender})=>{
+            this.roomManager.onConversation(roomId,message,sender);
         });
     }
 
