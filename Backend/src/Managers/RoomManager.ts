@@ -14,7 +14,6 @@ export class RoomManager {
     }
 
     roomDetails(roomId: string): Room | undefined {
-        console.log(roomId)
         const users = this.Rooms.get(roomId);
 
         return users;
@@ -76,8 +75,7 @@ export class RoomManager {
     }
 
     onConversation(roomId: string, message: string, sender: string) {
-        //get the room id
-        console.log("from omConv handler",sender);
+
         const members = this.Rooms.get(roomId);
         const user1 = members?.user1;
         const user2 = members?.user2;

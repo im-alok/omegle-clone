@@ -42,8 +42,6 @@ io.on('connection', (socket: Socket) => {
     })
 
     socket.on("disconnect",()=>{
-        console.log("control reache here");
-        console.log(socket.data);
         userManager.removeUser(socket.id,socket.data.roomId);
     })
 
