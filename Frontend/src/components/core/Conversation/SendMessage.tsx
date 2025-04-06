@@ -12,7 +12,6 @@ const SendMessage = ({ roomId, socket }: { roomId: string, socket: Socket | null
   }
 
   function handleSubmit() {
-    console.log("submit button is clicked");
     socket?.emit("conversation", {
       roomId,
       message: value,
