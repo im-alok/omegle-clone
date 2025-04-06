@@ -127,6 +127,9 @@ const Room = ({
                 remoteStream.current.removeTrack(track);
                 track.stop()
             });
+            if (remoteVideoRef.current) {
+                remoteVideoRef.current.srcObject = null;
+            }
             offererPc.current?.close();
             answererPc.current?.close();
             setMessage([]);
@@ -134,7 +137,6 @@ const Room = ({
         })
 
         ws?.on("conversation", ({ message, sender }: { message: string, sender: string }) => {
-            console.log("received the message")
             const newMessage: MessageType = {
                 message: message,
                 sender: sender
@@ -210,7 +212,9 @@ const Room = ({
 
                 {
                     !lobby && (
-                        <Button variant={"outline"} className='bg-green-500 text-black outline-none cursor-pointer' size={"lg"}>skip < MoveRight /></Button>
+                        <Button variant={"outline"} className='bg-green-500 text-black outline-none cursor-pointer' size={"lg"}
+                        onClick={handleSkip}
+                        >skip < MoveRight /></Button>
                     )
                 }
             </div>
@@ -229,20 +233,4 @@ export default Room
 
 
 
-//todo:
-// ** cleanup logic //done
-// 1. write the logic to hndle user after they leave the room or click the next button //done
-
-// left: implemet the on skip button
-// when user click skip 
-// make the loading useEffect
-// close the webRTC connections
-// take care of the socket bits
-
-
-// 2. add the chat features
-// 3. deploy the code
-// 4. dome
-
-
-//when one user leave disconnect the webRtc connection from the user active there also
+//todo: Deploy the code

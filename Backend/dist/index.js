@@ -35,8 +35,6 @@ io.on('connection', (socket) => {
         userManager.addUser(userName, socket);
     });
     socket.on("disconnect", () => {
-        console.log("control reache here");
-        console.log(socket.data);
         userManager.removeUser(socket.id, socket.data.roomId);
     });
     socket.on("skip", ({ roomId }) => {

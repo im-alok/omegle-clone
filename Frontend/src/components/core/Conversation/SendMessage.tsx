@@ -12,11 +12,16 @@ const SendMessage = ({ roomId, socket }: { roomId: string, socket: Socket | null
   }
 
   function handleSubmit() {
+    if(value.length ===0){
+      return;
+    }
+
     socket?.emit("conversation", {
       roomId,
       message: value,
       sender: socket?.id
     })
+    setValue("")
   }
 
   return (

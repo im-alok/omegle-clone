@@ -7,7 +7,6 @@ class RoomManager {
         this.Rooms = new Map();
     }
     roomDetails(roomId) {
-        console.log(roomId);
         const users = this.Rooms.get(roomId);
         return users;
     }
@@ -53,8 +52,6 @@ class RoomManager {
         });
     }
     onConversation(roomId, message, sender) {
-        //get the room id
-        console.log("from omConv handler", sender);
         const members = this.Rooms.get(roomId);
         const user1 = members === null || members === void 0 ? void 0 : members.user1;
         const user2 = members === null || members === void 0 ? void 0 : members.user2;

@@ -94,5 +94,8 @@ export class UserManager {
             user2?.socket.emit("room-ends");
             this.queue.push(user2.socket.id);
         }
+
+        console.log(this.queue);
+        this.clearQueue();
     }
 }

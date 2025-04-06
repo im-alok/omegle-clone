@@ -56,7 +56,6 @@ class UserManager {
     }
     //close the room if anyone of the user left the room and send back to the queue
     closeRoom(roomId) {
-        console.log("from close room hanler");
         const user = this.roomManager.roomDetails(roomId);
         const user1 = user === null || user === void 0 ? void 0 : user.user1;
         const user2 = user === null || user === void 0 ? void 0 : user.user2;
@@ -64,15 +63,15 @@ class UserManager {
         this.roomManager.deleteRoom(roomId);
         //push the user back to the queue
         if (user1 === null || user1 === void 0 ? void 0 : user1.socket.connected) {
-            console.log("inside user1 socket");
             user1 === null || user1 === void 0 ? void 0 : user1.socket.emit("room-ends");
             this.queue.unshift(user1.socket.id);
         }
         if (user2 === null || user2 === void 0 ? void 0 : user2.socket.connected) {
-            console.log("inside user 2 socket");
             user2 === null || user2 === void 0 ? void 0 : user2.socket.emit("room-ends");
             this.queue.push(user2.socket.id);
         }
+        console.log(this.queue);
+        this.clearQueue();
     }
 }
 exports.UserManager = UserManager;

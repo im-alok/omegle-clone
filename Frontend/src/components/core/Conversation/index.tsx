@@ -12,8 +12,6 @@ interface handleProps{
 }
 
 const index = ({roomId,message,setMessage,socket}:handleProps) => {
-    console.log(message);
-    console.log(roomId)
     return (
         <div className='flex flex-col w-full h-full gap-5'>
             <Message messages={message} socket={socket}/>
