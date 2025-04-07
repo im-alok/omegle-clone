@@ -20,7 +20,7 @@ const io = new Server(server, {
     }
 });
 
-const PORT = 3000
+const PORT = 3001
 
 app.get('/', (req: Request, res: Response) => {
     res.status(200).json({
