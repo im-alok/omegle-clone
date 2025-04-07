@@ -24,8 +24,7 @@ const NameInput: React.FC<NameInputProps> = ({ onNameChange }) => {
             "-top-6 text-sm text-green-400 font-medium" : 
             "top-2 text-green-200/50"
         )}
-      >
-        Your Name
+      >Enter your name to continue:
       </label>
       <Input
         type="text"

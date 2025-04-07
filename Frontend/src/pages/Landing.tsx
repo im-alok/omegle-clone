@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Room from '../components/core/Room';
 import Background from '@/components/core/Background';
 import { Mic, MicOff, Video, VideoOff } from "lucide-react";

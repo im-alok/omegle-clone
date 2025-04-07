@@ -8,7 +8,7 @@ import { Button } from '../ui/button'
 import { MoveRight } from 'lucide-react'
 
 
-const URL = "http://localhost:3000/"
+const URL = "buzzbuddy-backend.alokramranjan.in/"
 
 export interface MessageType {
     sender: string,
@@ -223,7 +223,7 @@ const Room = ({
             {/* //chat apge */}
 
             <div className='w-full h-full'>
-                <ConversationPage roomId={id.current} message={message} setMessage={setMessage} socket={socket} />
+                <ConversationPage roomId={id.current} message={message} socket={socket} />
             </div>
         </div>
     )

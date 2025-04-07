@@ -1,5 +1,3 @@
-import React from 'react'
-
 const Loading = () => {
     return (
         <div className='min-w-[400px] min-h-[400px]'>
