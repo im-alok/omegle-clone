@@ -8,7 +8,7 @@ import { Button } from '../ui/button'
 import { MoveRight } from 'lucide-react'
 
 
-const URL = "buzzbuddy-backend.alokramranjan.in/"
+const URL = "https://buzzbuddy-backend.alokramranjan.in/"
 
 export interface MessageType {
     sender: string,
