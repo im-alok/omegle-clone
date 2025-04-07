@@ -1,9 +1,8 @@
 name: deploy backend to the ec2 server
 on:
   push:
-      paths:
-        - 'backend/**'
-        - '.github/workflows/deploy-backend.yml'
+    branches:
+      - master
 jobs:
   build-and-push-backend-to-ec2:
     runs-on: ubuntu-latest
