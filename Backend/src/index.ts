@@ -9,14 +9,14 @@ import { UserManager } from './Managers/UserManager';
 const app = express();
 
 app.use(cors({
-    origin:"https://omegle-clone-frontend-im-aloks-projects.vercel.app"
+    origin:["https://omegle-clone-frontend-im-aloks-projects.vercel.app","http://localhost:5173/"]
 }))
 
 const server = createServer(app);
 const io = new Server(server, {
     cors:{
         
-        origin:"https://omegle-clone-frontend-im-aloks-projects.vercel.app"
+        origin:["https://omegle-clone-frontend-im-aloks-projects.vercel.app","http://localhost:5173/"]
     }
 });
 
